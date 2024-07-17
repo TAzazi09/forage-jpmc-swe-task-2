@@ -7,7 +7,8 @@ import './App.css';
  * State declaration for <App />
  */
 interface IState {
-  data: ServerRespond[],
+  data: ServerRespond[];
+  showGraph: boolean;
 }
 
 /**
@@ -15,57 +16,53 @@ interface IState {
  * It renders title, button and Graph react element.
  */
 class App extends Component<{}, IState> {
+  private interval: NodeJS.Timeout | null = null;
+
   constructor(props: {}) {
     super(props);
 
     this.state = {
-      // data saves the server responds.
-      // We use this state to parse data down to the child element (Graph) as element property
       data: [],
+      showGraph: false, // Initially hide graph until data streaming starts
     };
   }
 
-  /**
-   * Render Graph react component with state.data parse as property data
-   */
+  componentDidMount() {
+    // No initial data fetching on component mount; starts only on button click
+  }
+
+  componentWillUnmount() {
+    // Clean up: stop fetching data when component unmounts
+    this.stopFetchingData();
+  }
+
+  startFetchingData() {
+    // Start fetching data immediately when the button is clicked
+    this.interval = setInterval(() => {
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        this.setState({ data: [...this.state.data, ...serverResponds] });
+      });
+    }, 100); // Fetch data every 100 milliseconds
+
+    // Update state to show graph once data fetching starts
+    this.setState({ showGraph: true });
+  }
+
+  stopFetchingData() {
+    // Clear the interval to stop fetching data
+    if (this.interval) {
+      clearInterval(this.interval);
+    }
+  }
+
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    if (this.state.showGraph) {
+      return <Graph data={this.state.data} />;
+    } else {
+      return null; // Render nothing until data fetching starts
+    }
   }
 
-  /**
-   * Get new data from server and update the state with the new data
-   */
-  getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
-  }
-
-  useEffect(() => {
-    const fetchData = async () => {
-        // Fetch data from server endpoint (e.g., /api/stock-data)
-        const response = await fetch('/api/stock-data');
-        const data = await response.json();
-        // Update state with new data
-        setStockData(data);
-    };
-
-    // Fetch data initially when component mounts
-    fetchData();
-
-    // Fetch data every 5 seconds
-    const intervalId = setInterval(fetchData, 5000);
-
-    // Clean up interval when component unmounts
-    return () => clearInterval(intervalId);
-}, []);
-
-
-  /**
-   * Render the App react component
-   */
   render() {
     return (
       <div className="App">
@@ -74,12 +71,7 @@ class App extends Component<{}, IState> {
         </header>
         <div className="App-content">
           <button className="btn btn-primary Stream-button"
-            // when button is click, our react app tries to request
-            // new data from the server.
-            // As part of your task, update the getDataFromServer() function
-            // to keep requesting the data every 100ms until the app is closed
-            // or the server does not return anymore data.
-            onClick={() => {this.getDataFromServer()}}>
+            onClick={() => this.startFetchingData()}>
             Start Streaming Data
           </button>
           <div className="Graph">
@@ -87,7 +79,7 @@ class App extends Component<{}, IState> {
           </div>
         </div>
       </div>
-    )
+    );
   }
 }
 
