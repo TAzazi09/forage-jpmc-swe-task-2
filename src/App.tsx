@@ -43,6 +43,26 @@ class App extends Component<{}, IState> {
     });
   }
 
+  useEffect(() => {
+    const fetchData = async () => {
+        // Fetch data from server endpoint (e.g., /api/stock-data)
+        const response = await fetch('/api/stock-data');
+        const data = await response.json();
+        // Update state with new data
+        setStockData(data);
+    };
+
+    // Fetch data initially when component mounts
+    fetchData();
+
+    // Fetch data every 5 seconds
+    const intervalId = setInterval(fetchData, 5000);
+
+    // Clean up interval when component unmounts
+    return () => clearInterval(intervalId);
+}, []);
+
+
   /**
    * Render the App react component
    */
