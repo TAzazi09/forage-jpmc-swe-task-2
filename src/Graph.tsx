@@ -7,7 +7,7 @@ interface IProps {
   data: ServerRespond[];
 }
 
-interface PerspectiveViewerElement {
+interface PerspectiveViewerElement extends HTMLElement {
   load: (table: Table) => void;
 }
 
@@ -15,7 +15,7 @@ class Graph extends Component<IProps, {}> {
   table: Table | undefined;
 
   componentDidMount() {
-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
+    const elem = document.getElementsByTagName('perspective-viewer')[0] as PerspectiveViewerElement;
 
     const schema = {
       stock: 'string',
@@ -51,7 +51,15 @@ class Graph extends Component<IProps, {}> {
   }
 
   render() {
-    return React.createElement('perspective-viewer');
+    return (
+      <perspective-viewer
+        view="y_line"
+        column-pivots='["stock"]'
+        row-pivots='["timestamp"]'
+        columns='["top_ask_price"]'
+        aggregates='{"stock":"distinct count","top_ask_price":"avg"}'>
+      </perspective-viewer>
+    );
   }
 }
 
